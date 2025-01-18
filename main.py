@@ -1,11 +1,9 @@
 # By Noah TerBest
 
 import pygame
-from assets import Ant
+from assets import Ant, doShit, greenAnt
 
-version = "2025.1.0.1"
-print(" ")
-print("Game version: " + version)
+version = "2025.1.0.2"
 
 class GameEngine:
     def __init__(self, width, height):
@@ -23,6 +21,14 @@ class GameEngine:
 
         #Load Character
         self.character = Ant(400, 300, width, height)
+        print("Loaded Ant version: " + Ant.version)
+
+        #Load Green Ant
+        self.greenAnt = greenAnt(200, 100, width, height)
+        print("Loaded Green Ant version: " + greenAnt.version)
+
+        ##END OF CODE
+        print("Load complete! Running game version: " + version)
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -32,32 +38,42 @@ class GameEngine:
                 if event.key == pygame.K_SPACE:
                     print("Spacebar pressed.")
                     print(Ant.speak(self))
-                    pass
-                if event.key == pygame.K_UP:
-                    self.character.move(0, -1)
-                    print("Up pressed.")
-                    pass
-                if event.key == pygame.K_DOWN:
-                    self.character.move(0,1)
-                    print("Down pressed.")
-                    pass
-                if event.key == pygame.K_LEFT:
-                    self.character.move(-1,0)
-                    print("Left pressed.")
-                    pass
-                if event.key == pygame.K_RIGHT:
-                    self.character.move(1,0)
-                    print("Right pressed.")
+                if event.key == pygame.K_ESCAPE:
+                    print("User initiated shutdown procedure.")
+                    print("Shutting down..")
+                    self.running = False
                     pass
 
     def update(self):
         # This is where you would update the game state, like moving objects or checking for collisions.
+        keys = pygame.key.get_pressed()
+
+        #Black ant character movement
+        if keys[pygame.K_UP]:
+            self.character.move(0, -1)
+        if keys[pygame.K_DOWN]:
+            self.character.move(0, 1)
+        if keys[pygame.K_LEFT]:
+            self.character.move(-1, 0)
+        if keys[pygame.K_RIGHT]:
+            self.character.move(1, 0)
+
+        #Green ant character movement
+        if keys[pygame.K_w]:
+            self.greenAnt.move(0, -1)
+        if keys[pygame.K_s]:
+            self.greenAnt.move(0, 1)
+        if keys[pygame.K_a]:
+            self.greenAnt.move(-1, 0)
+        if keys[pygame.K_d]:
+            self.greenAnt.move(1, 0)
         pass
 
     def draw(self):
         # Handles rendering. Here, you'd draw sprites, backgrounds, etc.
         self.screen.blit(self.background, (0, 0))
         self.character.draw(self.screen)
+        self.greenAnt.draw(self.screen)
         pass
 
     def run(self):
