@@ -1,3 +1,5 @@
+from email.quoprimime import header_length
+
 import pygame
 from utils import load_image
 from constants import ANT_SIZE, ANT_SPEED
@@ -5,7 +7,7 @@ from constants import ANT_SIZE, ANT_SPEED
 
 class Ant(pygame.sprite.Sprite):
     version = "25.1.0"
-
+    health = 100
     def __init__(self, x, y, screen_width, screen_height, image_path):
         super().__init__()
         try:
@@ -40,12 +42,24 @@ class Ant(pygame.sprite.Sprite):
     def draw(self, surface):
         surface.blit(self.image, self.rect)
 
+
+class BlackAnt(Ant):
+    version = "25.1.19.1"
+    health = 100
+    def __init__(self, x, y, screen_width, screen_height):
+        try:
+            super().__init__(x, y, screen_width, screen_height, 'black_ant.png')
+        except Exception as e:
+            print(f"Error initializing BlackAnt: {e}")
+            # If the parent class initialization fails, we'll just use a default Ant
+
     def speak(self):
-        return "Doing Ant"
+        return "Doing Black"
 
 
 class GreenAnt(Ant):
-    version = "25.1.19"
+    version = "25.1.19.1"
+    health = 100
     def __init__(self, x, y, screen_width, screen_height):
         try:
             super().__init__(x, y, screen_width, screen_height, 'green_ant.png')
@@ -55,3 +69,17 @@ class GreenAnt(Ant):
 
     def speak(self):
         return "Doing Green"
+
+
+class RedAnt(Ant):
+    version = "25.1.19.1"
+    health = 100
+    def __init__(self, x, y, screen_width, screen_height):
+        try:
+            super().__init__(x, y, screen_width, screen_height, 'red_ant.png')
+        except Exception as e:
+            print(f"Error initializing RedAnt: {e}")
+            # If the parent class initialization fails, we'll just use a default Ant
+
+    def speak(self):
+        return "Doing Red"

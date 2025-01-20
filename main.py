@@ -5,7 +5,7 @@ from sprites import SpriteManager
 from utils import load_image
 from entities import *
 
-version = "2025.1.19.1"
+version = "2025.1.19.2"
 
 class GameEngine:
     def __init__(self):
@@ -28,15 +28,18 @@ class GameEngine:
 
             # Load Characters
             try:
-                self.character = self.sprite_manager.add_ant("Ant", 400, 300)
+                self.black_ant = self.sprite_manager.add_ant("BlackAnt", 400, 300)
                 self.green_ant = self.sprite_manager.add_ant("GreenAnt", 200, 100)
-                if self.character:
+                self.red_ant = self.sprite_manager.add_ant("RedAnt", 100, 150)
+                if self.black_ant:
                     print(f"Loaded Ant version: {Ant.version}")
                 if self.green_ant:
                     print(f"Loaded Green Ant version: {GreenAnt.version}")
+                if self.red_ant:
+                    print(f"Loaded Red Ant version: {RedAnt.version}")
             except Exception as e:
                 print(f"Error initializing characters: {e}")
-                self.character = None
+                self.black_ant = None
                 self.green_ant = None
 
             print(f"Load complete! Running game version: {version}")
@@ -62,9 +65,9 @@ class GameEngine:
         keys = pygame.key.get_pressed()
 
         # Black ant character movement
-        if self.character:
-            self.character.move(0, -1 if keys[pygame.K_UP] else 1 if keys[pygame.K_DOWN] else 0)
-            self.character.move(-1 if keys[pygame.K_LEFT] else 1 if keys[pygame.K_RIGHT] else 0, 0)
+        if self.black_ant:
+            self.black_ant.move(0, -1 if keys[pygame.K_UP] else 1 if keys[pygame.K_DOWN] else 0)
+            self.black_ant.move(-1 if keys[pygame.K_LEFT] else 1 if keys[pygame.K_RIGHT] else 0, 0)
 
         # Green ant character movement
         if self.green_ant:
