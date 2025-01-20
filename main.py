@@ -32,7 +32,7 @@ class GameEngine:
                 self.green_ant = self.sprite_manager.add_ant("GreenAnt", 200, 100)
                 self.red_ant = self.sprite_manager.add_ant("RedAnt", 100, 150)
                 if self.black_ant:
-                    print(f"Loaded Ant version: {Ant.version}")
+                    print(f"Loaded Ant version: {BlackAnt.version}")
                 if self.green_ant:
                     print(f"Loaded Green Ant version: {GreenAnt.version}")
                 if self.red_ant:
