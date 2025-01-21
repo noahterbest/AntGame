@@ -1,3 +1,5 @@
+#By Noah TerBest
+
 import pygame
 from entities import Ant, GreenAnt, BlackAnt, RedAnt
 from constants import SCREEN_WIDTH, SCREEN_HEIGHT

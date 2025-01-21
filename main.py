@@ -1,11 +1,15 @@
+#By Noah TerBest
+
 import pygame
 import os
 from constants import SCREEN_WIDTH, SCREEN_HEIGHT, FPS, BLACK
 from sprites import SpriteManager
-from utils import load_image
+from utils import *
 from entities import *
 
-version = "2025.1.19.2"
+version = "2025.1.20"
+
+print(" ") # this is just to add a space between my console output vs pygame's
 
 class GameEngine:
     def __init__(self):
@@ -17,6 +21,25 @@ class GameEngine:
             self.running = True
 
             self.sprite_manager = SpriteManager()
+
+            #Tile Map Loader
+            self.map_data = [
+                'AAAAAAAAAAAAA',
+                'DDDDDDDDDDDDD',
+                'TTTTTTTTTTTTT',
+                'DDDDDDDDDDDDD',
+                'DDDDDDDDDDDDD',
+                'DDDDDDDDDDDDD',
+                'DDDDDDDDDDDDD',
+                'DDDDDDDDDDDDD',
+                'DDDDDDDDDDDDD',
+                'DDDDDDDDDDDDD'
+            ]
+
+            self.tile_size = 64
+            self.tile_map = TileMap(self.map_data, self.tile_size)
+            self.camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
+            self.camera.set_map_width(len(self.map_data[0]))  # Set map width based on TileMap's width
 
             # Load background
             try:
@@ -68,6 +91,7 @@ class GameEngine:
         if self.black_ant:
             self.black_ant.move(0, -1 if keys[pygame.K_UP] else 1 if keys[pygame.K_DOWN] else 0)
             self.black_ant.move(-1 if keys[pygame.K_LEFT] else 1 if keys[pygame.K_RIGHT] else 0, 0)
+            self.camera.update(self.black_ant)
 
         # Green ant character movement
         if self.green_ant:
@@ -77,8 +101,18 @@ class GameEngine:
         self.sprite_manager.update()
 
     def draw(self):
-        self.screen.blit(self.background, (0, 0))
-        self.sprite_manager.draw(self.screen)
+        self.screen.fill(BLACK)
+        self.tile_map.render(self.screen, self.camera.x, self.camera.y)
+
+        # Draw characters or other game objects with camera offset
+        if self.black_ant:
+            self.screen.blit(self.black_ant.image, self.camera.apply(self.black_ant))
+        if self.green_ant:
+            self.screen.blit(self.green_ant.image, self.camera.apply(self.green_ant))
+        if self.red_ant:
+            self.screen.blit(self.red_ant.image, self.camera.apply(self.red_ant))
+
+        # Draw any other sprites or game objects here similarly with camera offset
 
     def run(self):
         try:
