@@ -7,7 +7,7 @@ from sprites import SpriteManager
 from utils import *
 from entities import *
 
-version = "2025.1.20"
+version = "2025.1.21"
 
 print(" ") # this is just to add a space between my console output vs pygame's
 
@@ -24,9 +24,10 @@ class GameEngine:
 
             #Tile Map Loader
             self.map_data = [
-                'AAAAAAAAAAAAA',
-                'DDDDDDDDDDDDD',
+                'AAAAAAAAAAAAAAAAAAAAAAAAAA',
+                'DDDDDDDDDDDDDDDDDDDDDDDDDD',
                 'TTTTTTTTTTTTT',
+                'DDDDDDDDDDDDD',
                 'DDDDDDDDDDDDD',
                 'DDDDDDDDDDDDD',
                 'DDDDDDDDDDDDD',
@@ -39,7 +40,7 @@ class GameEngine:
             self.tile_size = 64
             self.tile_map = TileMap(self.map_data, self.tile_size)
             self.camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
-            self.camera.set_map_width(len(self.map_data[0]))  # Set map width based on TileMap's width
+            self.camera.set_map_dimensions(len(self.map_data[0]) * self.tile_size, len(self.map_data) * self.tile_size)
 
             # Load background
             try:
@@ -51,19 +52,20 @@ class GameEngine:
 
             # Load Characters
             try:
-                self.black_ant = self.sprite_manager.add_ant("BlackAnt", 400, 300)
-                self.green_ant = self.sprite_manager.add_ant("GreenAnt", 200, 100)
-                self.red_ant = self.sprite_manager.add_ant("RedAnt", 100, 150)
-                if self.black_ant:
-                    print(f"Loaded Ant version: {BlackAnt.version}")
-                if self.green_ant:
-                    print(f"Loaded Green Ant version: {GreenAnt.version}")
-                if self.red_ant:
-                    print(f"Loaded Red Ant version: {RedAnt.version}")
+                # Calculate map dimensions based on your map_data
+                map_width = len(self.map_data[0]) * self.tile_size
+                map_height = len(self.map_data) * self.tile_size
+
+                self.black_ant = self.sprite_manager.add_ant("BlackAnt", 400, 300, map_width, map_height)
+                self.green_ant = self.sprite_manager.add_ant("GreenAnt", 200, 100, map_width, map_height)
+                self.red_ant = self.sprite_manager.add_ant("RedAnt", 100, 150, map_width, map_height)
+                print(f"Loaded Ant class version: {Ant.version}")
+
             except Exception as e:
                 print(f"Error initializing characters: {e}")
                 self.black_ant = None
                 self.green_ant = None
+                self.red_ant = None  # Ensure red_ant is set to None if there's an error
 
             print(f"Load complete! Running game version: {version}")
         except Exception as e:
@@ -76,9 +78,9 @@ class GameEngine:
             if event.type == pygame.QUIT:
                 self.running = False
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE and self.character:
+                if event.key == pygame.K_SPACE and self.black_ant:  # Changed to black_ant since self.character was not defined
                     print("Spacebar pressed.")
-                    print(self.character.speak())
+                    print(self.black_ant.speak())
                 if event.key == pygame.K_ESCAPE:
                     print("User initiated shutdown procedure.")
                     print("Shutting down..")

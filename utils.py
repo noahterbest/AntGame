@@ -50,14 +50,19 @@ class Camera:
         self.x = 0
         self.y = 0
         self.map_width = 0
+        self.map_height = 0
 
-    def set_map_width(self, map_width):
+    def set_map_dimensions(self, map_width, map_height):
         self.map_width = map_width
+        self.map_height = map_height
 
     def apply(self, target):
+        # Adjust the target's position by the camera's offset
         return target.rect.move(-self.x, -self.y)
 
     def update(self, target):
-        # Basic camera follow; you'll want to adjust this for more complex behavior
-        new_x = max(0, min(target.rect.x - self.width // 2, self.map_width * 64 - self.width))
+        # Update camera position based on target's position but within the map bounds
+        new_x = max(0, min(target.rect.x - self.width // 2, self.map_width - self.width))
+        new_y = max(0, min(target.rect.y - self.height // 2, self.map_height - self.height))
         self.x = new_x
+        self.y = new_y
