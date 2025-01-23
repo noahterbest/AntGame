@@ -17,12 +17,22 @@ def load_image(path, size):
         return placeholder
 
 class TileMap:
-    def __init__(self, map_data, tile_size):
-        self.map_data = map_data
+    def __init__(self, map_file, tile_size, default_map_data=None):
         self.tile_size = tile_size
-        self.width = len(map_data[0])
-        self.height = len(map_data)
+        if os.path.exists(os.path.join(os.environ.get('ASSET_PATH', 'assets'), map_file)):
+            self.map_data = self.load_map_from_file(map_file)
+        else:
+            print(f"Map file '{map_file}' not found, using default map data.")
+            self.map_data = default_map_data
+        self.width = len(self.map_data[0])
+        self.height = len(self.map_data)
         self.tiles = self.load_tiles()
+
+    def load_map_from_file(self, map_file):
+        asset_path = os.environ.get('ASSET_PATH', 'assets')
+        full_path = os.path.join(asset_path, map_file)
+        with open(full_path, 'r') as f:
+            return [line.strip() for line in f if line.strip()]
 
     def load_tiles(self):
         tiles = {}
@@ -30,6 +40,7 @@ class TileMap:
         tiles['D'] = pygame.image.load('assets/tiles/dirt.png').convert_alpha() #Dark Dirt Tile
         tiles['T'] = pygame.image.load('assets/tiles/tunnel.png').convert_alpha() #Tunnel Tile
         tiles['A'] = pygame.image.load('assets/tiles/air.png').convert_alpha() # Air Tile
+        tiles['H'] = pygame.image.load('assets/tiles/horizon.png').convert_alpha()  # Air Tile
         return tiles
 
     def get_tile_image(self, tile_char):

@@ -7,7 +7,7 @@ from sprites import SpriteManager
 from utils import *
 from entities import *
 
-version = "2025.1.21"
+version = "2025.1.22"
 
 print(" ") # this is just to add a space between my console output vs pygame's
 
@@ -26,21 +26,21 @@ class GameEngine:
             self.map_data = [
                 'AAAAAAAAAAAAAAAAAAAAAAAAAA',
                 'DDDDDDDDDDDDDDDDDDDDDDDDDD',
-                'TTTTTTTTTTTTT',
-                'DDDDDDDDDDDDD',
-                'DDDDDDDDDDDDD',
-                'DDDDDDDDDDDDD',
-                'DDDDDDDDDDDDD',
-                'DDDDDDDDDDDDD',
-                'DDDDDDDDDDDDD',
-                'DDDDDDDDDDDDD',
-                'DDDDDDDDDDDDD'
+                'TTTTTTTTTTTTTTTTTTTTTTTTTT',
+                'DDDDDDDDDDDDDDDDDDDDDDDDDD',
+                'DDDDDDDDDDDDDDDDDDDDDDDDDD',
+                'DDDDDDDDDDDDDDDDDDDDDDDDDD',
+                'DDDDDDDDDDDDDDDDDDDDDDDDDD',
+                'DDDDDDDDDDDDDDDDDDDDDDDDDD',
+                'DDDDDDDDDDDDDDDDDDDDDDDDDD',
+                'DDDDDDDDDDDDDDDDDDDDDDDDDD',
+                'DDDDDDDDDDDDDDDDDDDDDDDDDD'
             ]
 
             self.tile_size = 64
-            self.tile_map = TileMap(self.map_data, self.tile_size)
+            self.tile_map = TileMap('map.txt', self.tile_size, default_map_data=self.map_data)
             self.camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
-            self.camera.set_map_dimensions(len(self.map_data[0]) * self.tile_size, len(self.map_data) * self.tile_size)
+            self.camera.set_map_dimensions(len(self.tile_map.map_data[0]) * self.tile_size, len(self.tile_map.map_data) * self.tile_size)
 
             # Load background
             try:
@@ -89,18 +89,29 @@ class GameEngine:
     def update(self):
         keys = pygame.key.get_pressed()
 
-        # Black ant character movement
+        # Black ant character movement with both arrow keys and WASD
         if self.black_ant:
-            self.black_ant.move(0, -1 if keys[pygame.K_UP] else 1 if keys[pygame.K_DOWN] else 0)
-            self.black_ant.move(-1 if keys[pygame.K_LEFT] else 1 if keys[pygame.K_RIGHT] else 0, 0)
+            # Vertical movement
+            vertical_move = 0
+            if keys[pygame.K_UP] or keys[pygame.K_w]:
+                vertical_move = -1
+            elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
+                vertical_move = 1
+
+            # Horizontal movement
+            horizontal_move = 0
+            if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+                horizontal_move = -1
+            elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+                horizontal_move = 1
+
+            # Apply movement
+            if vertical_move != 0:
+                self.black_ant.move(0, vertical_move, self.tile_map)
+            if horizontal_move != 0:
+                self.black_ant.move(horizontal_move, 0, self.tile_map)
+
             self.camera.update(self.black_ant)
-
-        # Green ant character movement
-        if self.green_ant:
-            self.green_ant.move(0, -1 if keys[pygame.K_w] else 1 if keys[pygame.K_s] else 0)
-            self.green_ant.move(-1 if keys[pygame.K_a] else 1 if keys[pygame.K_d] else 0, 0)
-
-        self.sprite_manager.update()
 
     def draw(self):
         self.screen.fill(BLACK)
@@ -113,8 +124,6 @@ class GameEngine:
             self.screen.blit(self.green_ant.image, self.camera.apply(self.green_ant))
         if self.red_ant:
             self.screen.blit(self.red_ant.image, self.camera.apply(self.red_ant))
-
-        # Draw any other sprites or game objects here similarly with camera offset
 
     def run(self):
         try:

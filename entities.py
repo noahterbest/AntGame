@@ -7,7 +7,7 @@ from constants import ANT_SIZE, ANT_SPEED, SCREEN_WIDTH, SCREEN_HEIGHT
 
 
 class Ant(pygame.sprite.Sprite):
-    version = "25.1.21"
+    version = "25.1.22"
     health = 100
     def __init__(self, x, y, screen_width, screen_height, map_width, map_height, image_path):
         super().__init__()
@@ -35,29 +35,34 @@ class Ant(pygame.sprite.Sprite):
             self.screen_width = screen_width
             self.screen_height = screen_height
 
-    def move(self, dx, dy):
+    def move(self, dx, dy, tile_map):
         new_x = self.rect.x + dx * self.speed
         new_y = self.rect.y + dy * self.speed
 
-        # Directly map movement to rotation:
-        if dx > 0:  # Moving right, face up
-            self.direction = 90
-        elif dx < 0:  # Moving left, face down
-            self.direction = -90  # or 270
-        elif dy < 0:  # Moving up, face right
-            self.direction = 0
-        elif dy > 0:  # Moving down, face left
-            self.direction = 180
+        # Calculate new tile position
+        new_tile_x = int(new_x / tile_map.tile_size)
+        new_tile_y = int(new_y / tile_map.tile_size)
 
-        # Rotate the image based on the new direction
-        self.image = pygame.transform.rotate(self.original_image, -self.direction)
-        self.rect = self.image.get_rect(center=self.rect.center)  # Ensure rotation around center
+        # Ensure the new position is within the map bounds
+        if 0 <= new_tile_y < len(tile_map.map_data) and 0 <= new_tile_x < len(tile_map.map_data[new_tile_y]):
+            tile_at_new_pos = tile_map.map_data[new_tile_y][new_tile_x]
+            if tile_at_new_pos not in ['A']:
+                # Directly map movement to rotation:
+                if dx > 0:  # Moving right, face up
+                    self.direction = 90
+                elif dx < 0:  # Moving left, face down
+                    self.direction = -90  # or 270
+                elif dy < 0:  # Moving up, face right
+                    self.direction = 0
+                elif dy > 0:  # Moving down, face left
+                    self.direction = 180
 
-        # Check if new position is within map boundaries
-        if 0 <= new_x <= self.map_width - self.rect.width:
-            self.rect.x = new_x
-        if 0 <= new_y <= self.map_height - self.rect.height:
-            self.rect.y = new_y
+                # Rotate the image based on the new direction
+                self.image = pygame.transform.rotate(self.original_image, -self.direction)
+                self.rect = self.image.get_rect(center=self.rect.center)  # Ensure rotation around center
+
+                self.rect.x = new_x
+                self.rect.y = new_y
 
     def draw(self, surface):
         surface.blit(self.image, self.rect)
