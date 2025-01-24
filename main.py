@@ -1,4 +1,4 @@
-#By Noah TerBest
+# By Noah TerBest
 
 import pygame
 import os
@@ -7,9 +7,10 @@ from sprites import SpriteManager
 from utils import *
 from entities import *
 
-version = "2025.1.22"
+version = "2025.1.23"
 
-print(" ") # this is just to add a space between my console output vs pygame's
+print(" ")  # this is just to add a space between my console output vs pygame's
+
 
 class GameEngine:
     def __init__(self):
@@ -22,25 +23,30 @@ class GameEngine:
 
             self.sprite_manager = SpriteManager()
 
-            #Tile Map Loader
+            # Define scale_factor before using it
+            self.scale_factor = 2
+
+            # Tile Map Loader
             self.map_data = [
                 'AAAAAAAAAAAAAAAAAAAAAAAAAA',
                 'DDDDDDDDDDDDDDDDDDDDDDDDDD',
-                'TTTTTTTTTTTTTTTTTTTTTTTTTT',
-                'DDDDDDDDDDDDDDDDDDDDDDDDDD',
-                'DDDDDDDDDDDDDDDDDDDDDDDDDD',
-                'DDDDDDDDDDDDDDDDDDDDDDDDDD',
-                'DDDDDDDDDDDDDDDDDDDDDDDDDD',
-                'DDDDDDDDDDDDDDDDDDDDDDDDDD',
-                'DDDDDDDDDDDDDDDDDDDDDDDDDD',
-                'DDDDDDDDDDDDDDDDDDDDDDDDDD',
-                'DDDDDDDDDDDDDDDDDDDDDDDDDD'
+                'TTTTTTTTTTTTT',
+                'DDDDDDDDDDDDD',
+                'DDDDDDDDDDDDD',
+                'DDDDDDDDDDDDD',
+                'DDDDDDDDDDDDD',
+                'DDDDDDDDDDDDD',
+                'DDDDDDDDDDDDD',
+                'DDDDDDDDDDDDD',
+                'DDDDDDDDDDDDD'
             ]
 
-            self.tile_size = 64
-            self.tile_map = TileMap('map.txt', self.tile_size, default_map_data=self.map_data)
+            self.tile_size = 32  # Original size
+            self.tile_map = TileMap('map.txt', self.tile_size * self.scale_factor, default_map_data=self.map_data, scale_factor=self.scale_factor)
             self.camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
-            self.camera.set_map_dimensions(len(self.tile_map.map_data[0]) * self.tile_size, len(self.tile_map.map_data) * self.tile_size)
+            self.camera.scale_factor = self.scale_factor
+            self.camera.set_map_dimensions(len(self.tile_map.map_data[0]) * self.tile_size * self.scale_factor,
+                                           len(self.tile_map.map_data) * self.tile_size * self.scale_factor)
 
             # Load background
             try:
@@ -51,14 +57,23 @@ class GameEngine:
                 self.background.fill(BLACK)
 
             # Load Characters
+            self.scale_factor = 2  # Move this line here to make it an instance variable
             try:
-                # Calculate map dimensions based on your map_data
                 map_width = len(self.map_data[0]) * self.tile_size
                 map_height = len(self.map_data) * self.tile_size
 
-                self.black_ant = self.sprite_manager.add_ant("BlackAnt", 400, 300, map_width, map_height)
-                self.green_ant = self.sprite_manager.add_ant("GreenAnt", 200, 100, map_width, map_height)
-                self.red_ant = self.sprite_manager.add_ant("RedAnt", 100, 150, map_width, map_height)
+                # Find a valid starting position or use a default one
+                def find_valid_spawn():
+                    for y, row in enumerate(self.map_data):
+                        for x, tile in enumerate(row):
+                            if tile in ['D', 'T']:  # Assuming 'D' for dirt and 'T' for tunnel, walkable tiles
+                                return x * self.tile_size, y * self.tile_size
+                    return 0, 0  # Default position if no valid tile found
+
+                valid_x, valid_y = find_valid_spawn()
+                self.black_ant = self.sprite_manager.add_ant("BlackAnt", valid_x // self.scale_factor, valid_y // self.scale_factor, map_width, map_height, self.scale_factor)
+                self.green_ant = self.sprite_manager.add_ant("GreenAnt", 200 // self.scale_factor,100 // self.scale_factor, map_width, map_height, self.scale_factor)
+                self.red_ant = self.sprite_manager.add_ant("RedAnt", 100 // self.scale_factor, 150 // self.scale_factor, map_width, map_height, self.scale_factor)
                 print(f"Loaded Ant class version: {Ant.version}")
 
             except Exception as e:
@@ -66,6 +81,10 @@ class GameEngine:
                 self.black_ant = None
                 self.green_ant = None
                 self.red_ant = None  # Ensure red_ant is set to None if there's an error
+
+            # Create a scaled surface for rendering
+            self.scaled_surface = pygame.Surface(
+                (SCREEN_WIDTH // self.scale_factor, SCREEN_HEIGHT // self.scale_factor))
 
             print(f"Load complete! Running game version: {version}")
         except Exception as e:
@@ -78,7 +97,7 @@ class GameEngine:
             if event.type == pygame.QUIT:
                 self.running = False
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE and self.black_ant:  # Changed to black_ant since self.character was not defined
+                if event.key == pygame.K_SPACE and self.black_ant:
                     print("Spacebar pressed.")
                     print(self.black_ant.speak())
                 if event.key == pygame.K_ESCAPE:
@@ -105,25 +124,26 @@ class GameEngine:
             elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
                 horizontal_move = 1
 
-            # Apply movement
-            if vertical_move != 0:
-                self.black_ant.move(0, vertical_move, self.tile_map)
-            if horizontal_move != 0:
-                self.black_ant.move(horizontal_move, 0, self.tile_map)
-
-            self.camera.update(self.black_ant)
+            # Apply movement, check if move is valid
+            if vertical_move != 0 and self.black_ant.move(0, vertical_move, self.tile_map):
+                self.camera.update(self.black_ant)
+            if horizontal_move != 0 and self.black_ant.move(horizontal_move, 0, self.tile_map):
+                self.camera.update(self.black_ant)
 
     def draw(self):
-        self.screen.fill(BLACK)
-        self.tile_map.render(self.screen, self.camera.x, self.camera.y)
+        self.scaled_surface.fill(BLACK)
+        self.tile_map.render(self.scaled_surface, self.camera.x // self.scale_factor,
+                             self.camera.y // self.scale_factor)
 
-        # Draw characters or other game objects with camera offset
-        if self.black_ant:
-            self.screen.blit(self.black_ant.image, self.camera.apply(self.black_ant))
-        if self.green_ant:
-            self.screen.blit(self.green_ant.image, self.camera.apply(self.green_ant))
-        if self.red_ant:
-            self.screen.blit(self.red_ant.image, self.camera.apply(self.red_ant))
+        for ant in [self.black_ant, self.green_ant, self.red_ant]:
+            if ant:
+                # Adjust position for camera for all ants to appear in their correct world position
+                adjusted_x = ant.rect.x - (self.camera.x // self.scale_factor)
+                adjusted_y = ant.rect.y - (self.camera.y // self.scale_factor)
+                self.scaled_surface.blit(ant.image, (adjusted_x, adjusted_y))
+
+        scaled_scene = pygame.transform.scale(self.scaled_surface, (SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.screen.blit(scaled_scene, (0, 0))
 
     def run(self):
         try:
@@ -137,6 +157,7 @@ class GameEngine:
             print(f"An error occurred during the game loop: {e}")
         finally:
             pygame.quit()
+
 
 if __name__ == "__main__":
     try:
