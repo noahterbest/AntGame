@@ -19,9 +19,9 @@ def load_image(path, size):
 
 
 class TileMap:
-    def __init__(self, map_file, tile_size, default_map_data=None, scale_factor=1):
+    def __init__(self, map_file, tile_size, default_map_data=None):
         self.tile_size = tile_size
-        self.scale_factor = scale_factor
+
         if os.path.exists(os.path.join(os.environ.get('ASSET_PATH', 'assets'), map_file)):
             self.map_data = self.load_map_from_file(map_file)
         else:
@@ -41,20 +41,20 @@ class TileMap:
 
     def load_tiles(self):
         tiles = {}
-        # Load dirt variations at twice the size then scale down for rendering
+        # Load dirt variations correctly sized without scaling
         dirt_variations = [
             load_image('tiles/Dirt1.png', (self.tile_size, self.tile_size)),
             load_image('tiles/Dirt2.png', (self.tile_size, self.tile_size)),
             load_image('tiles/Dirt3.png', (self.tile_size, self.tile_size))
         ]
-        dirt_variations = [pygame.transform.scale(d, (self.tile_size // self.scale_factor, self.tile_size // self.scale_factor)) for d in dirt_variations]
+        dirt_variations = [d for d in dirt_variations]
 
-        # Load other tiles at twice the size then scale down for rendering
-        tiles['T'] = pygame.transform.scale(load_image('tiles/tunnel.png', (self.tile_size, self.tile_size)), (self.tile_size // self.scale_factor, self.tile_size // self.scale_factor))
-        tiles['A'] = pygame.transform.scale(load_image('tiles/air.png', (self.tile_size, self.tile_size)), (self.tile_size // self.scale_factor, self.tile_size // self.scale_factor))
+        # Load other tiles directly with the correct size
+        tiles['T'] = load_image('tiles/tunnel.png', (self.tile_size, self.tile_size))
+        tiles['A'] = load_image('tiles/air.png', (self.tile_size, self.tile_size))
 
         # Create a map for dirt tiles
-        dirt_map = []
+        self.dirt_map = []
         for row in self.map_data:
             dirt_row = []
             for tile in row:
@@ -62,11 +62,11 @@ class TileMap:
                     dirt_row.append(random.choice(dirt_variations))
                 else:
                     dirt_row.append(None)  # Placeholder for non-dirt tiles
-            dirt_map.append(dirt_row)
+            self.dirt_map.append(dirt_row)
 
-        tiles['D'] = lambda x, y: dirt_map[y][x] if dirt_map[y][x] else None
+        tiles['D'] = lambda x, y: self.dirt_map[y][x] if self.dirt_map[y][x] else None
 
-        return tiles, dirt_map
+        return tiles, self.dirt_map
 
     def get_tile_image(self, tile_char, x, y):
         if tile_char == 'D':
@@ -75,15 +75,27 @@ class TileMap:
 
     # In TileMap's render method, if scaling tiles:
     def render(self, surface, camera_x, camera_y):
+        # Calculate the total map height in pixels
+        map_pixel_height = len(self.map_data) * self.tile_size
+        screen_height = surface.get_height()
+
+        # Only add vertical offset if the map fits within the screen
+        vertical_offset = max(0, screen_height - map_pixel_height)
+
+        # Iterate over the map and render only the visible portion
         for y, row in enumerate(self.map_data):
             for x, tile in enumerate(row):
-                if tile != '-':
+                if tile != '-':  # Only render visible tiles
                     image = self.get_tile_image(tile, x, y)
                     if image:
-                        # Scale the tile if needed, or adjust rendering for scaled view:
-                        scaled_image = pygame.transform.scale(image, (self.tile_size // self.scale_factor, self.tile_size // self.scale_factor))
-                        surface.blit(scaled_image, ((x * self.tile_size) // self.scale_factor - camera_x // self.scale_factor,
-                                                    (y * self.tile_size) // self.scale_factor - camera_y // self.scale_factor))
+                        # Calculate the tile's position on the screen
+                        screen_x = x * self.tile_size - camera_x
+                        screen_y = y * self.tile_size + vertical_offset - camera_y
+
+                        # Skip rendering tiles outside the screen's view
+                        if (-self.tile_size < screen_x < surface.get_width() and
+                                -self.tile_size < screen_y < surface.get_height()):
+                            surface.blit(image, (screen_x, screen_y))
 
 class Camera:
     def __init__(self, width, height):
@@ -93,7 +105,7 @@ class Camera:
         self.y = 0
         self.map_width = 0
         self.map_height = 0
-        self.scale_factor = 1  # Default scale factor, updated by GameEngine
+
 
     def set_map_dimensions(self, map_width, map_height):
         self.map_width = map_width
@@ -101,13 +113,11 @@ class Camera:
 
     def apply(self, target):
         # Adjust the target's position by the camera's offset, accounting for scaling
-        scaled_target_rect = target.rect.copy()
-        scaled_target_rect.x *= self.scale_factor
-        scaled_target_rect.y *= self.scale_factor
-        return scaled_target_rect.move(-self.x, -self.y)
+        return target.rect.move(-self.x, -self.y)
 
     def update(self, target):
-        new_x = max(0, min(target.rect.x * self.scale_factor - self.width // 2, self.map_width - self.width))
-        new_y = max(0, min(target.rect.y * self.scale_factor - self.height // 2, self.map_height - self.height))
-        self.x = new_x
-        self.y = new_y
+        # Pan horizontally, center the camera around the target
+        self.x = max(0, min(target.rect.x - self.width // 2, self.map_width - self.width))
+
+        # Pan vertically, center the camera around the target
+        self.y = max(0, min(target.rect.y - self.height // 2, self.map_height - self.height))
